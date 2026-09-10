@@ -41,6 +41,7 @@ body{
 
 /* Header */
 .masthead{
+  position:relative;
   display:flex; align-items:center; gap:16px;
   padding:18px 22px;
   background:var(--ink);
@@ -369,7 +370,7 @@ body::after{
   .home-lang-hint{font-size:9.5px;text-align:center;margin-top:3px;}
 }
 
-/* Translation language switch: German original stays visible; secondary line toggles Bangla/English */
+/* Language switch: Bangla / English / Deutsch. Deutsch shows German original only. */
 .masthead-main{min-width:0;flex:1;}
 .header-tools{
   margin-left:auto;
@@ -435,14 +436,96 @@ body::after{
   .masthead{flex-wrap:wrap;}
   .masthead-main{flex:1 1 calc(100% - 70px);}
   .header-tools{width:100%;margin-left:0;justify-content:space-between;padding-left:70px;}
+  .meta-stack{margin-left:auto;}
   .masthead .meta{margin-left:0;}
 }
 @media (max-width:480px){
   .header-tools{padding-left:0;gap:7px;}
   .masthead .meta{display:block;font-size:9.5px;padding:7px 8px;}
   .lang-label{display:none;}
-  .lang-btn{font-size:10.8px;padding:7px 9px;}
+  .lang-btn{font-size:10.2px;padding:7px 8px;}
   .lang-switch{margin-left:auto;}
+}
+
+
+/* Bangladesh + Germany flags in the top-right header */
+.meta-stack{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:7px;
+  flex:0 0 auto;
+}
+.country-flags{
+  position:absolute;
+  top:14px;
+  right:18px;
+  z-index:20;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+}
+.flag-icon{
+  position:relative;
+  width:38px;
+  height:25px;
+  flex:0 0 auto;
+  overflow:hidden;
+  border-radius:7px;
+  border:1px solid rgba(255,255,255,.42);
+  box-shadow:
+    0 6px 15px -7px rgba(0,0,0,.72),
+    inset 0 1px 0 rgba(255,255,255,.22);
+  transform:translateZ(0);
+}
+.flag-icon::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(145deg,rgba(255,255,255,.16),transparent 43%,rgba(0,0,0,.08));
+}
+.flag-bd{
+  background:#006a4e;
+}
+.flag-bd::before{
+  content:"";
+  position:absolute;
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:#f42a41;
+  left:47%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  box-shadow:0 1px 4px rgba(0,0,0,.16);
+}
+.flag-de{
+  background:linear-gradient(
+    to bottom,
+    #111 0 33.333%,
+    #dd0000 33.333% 66.666%,
+    #ffce00 66.666% 100%
+  );
+}
+.flag-icon:hover{
+  transform:translateY(-1px);
+  box-shadow:
+    0 8px 18px -8px rgba(0,0,0,.8),
+    inset 0 1px 0 rgba(255,255,255,.24);
+}
+
+@media (max-width:720px){
+  .meta-stack{gap:5px;}
+  .flag-icon{width:34px;height:22px;border-radius:6px;}
+  .flag-bd::before{width:11px;height:11px;}
+  .country-flags{top:10px;right:12px;gap:6px;}
+}
+@media (max-width:480px){
+  .flag-icon{width:30px;height:20px;border-radius:5px;}
+  .flag-bd::before{width:10px;height:10px;}
+  .country-flags{top:8px;right:10px;gap:5px;}
 }
 
 /* Main panels */
@@ -872,10 +955,17 @@ button:focus-visible,.state-select:focus-visible{
           <span class="lang-label">Translation</span>
           <button type="button" class="lang-btn active" id="lang-bn-btn" aria-pressed="true" onclick="setTranslationLanguage('bn')">বাংলা</button>
           <button type="button" class="lang-btn" id="lang-en-btn" aria-pressed="false" onclick="setTranslationLanguage('en')">English</button>
+          <button type="button" class="lang-btn" id="lang-de-btn" aria-pressed="false" onclick="setTranslationLanguage('de')">Deutsch</button>
         </div>
         <div class="home-lang-hint" id="home-lang-hint">হোম থেকেই ভাষা বেছে নিন</div>
       </div>
-      <div class="meta">৩০০ সাধারণ + ১৬০ রাজ্য<br>Stand 07.05.2025</div>
+      <div class="meta-stack">
+        <div class="country-flags" aria-label="Bangladesh and Germany">
+          <span class="flag-icon flag-bd" role="img" aria-label="Bangladesh flag" title="Bangladesh"></span>
+          <span class="flag-icon flag-de" role="img" aria-label="Germany flag" title="Germany"></span>
+        </div>
+        <div class="meta" id="header-meta" style="margin-top:34px;">৩০০ সাধারণ + ১৬০ রাজ্য<br>Stand 07.05.2025</div>
+      </div>
     </div>
   </div>
 
@@ -1030,7 +1120,7 @@ const STORAGE_KEY_LANGUAGE = 'lid_translation_language_v1';
 let translationLanguage = (() => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_LANGUAGE);
-    return (saved === 'en' || saved === 'bn') ? saved : 'bn';
+    return (saved === 'en' || saved === 'bn' || saved === 'de') ? saved : 'bn';
   } catch(e) {
     return 'bn';
   }
@@ -1168,6 +1258,18 @@ function applySecondaryTranslationToRenderedQuestion(q, status){
   qTrans.classList.toggle('bn', translationLanguage==='bn');
   qTrans.classList.remove('translation-loading');
 
+  // Deutsch mode = German original only, no secondary translation line.
+  if(translationLanguage==='de'){
+    qTrans.textContent = '';
+    qTrans.classList.add('hidden');
+    optTrans.forEach(el=>{
+      el.textContent = '';
+      el.classList.add('hidden');
+      el.classList.remove('lang-en','translation-loading');
+    });
+    return;
+  }
+
   if(translationLanguage==='bn'){
     qTrans.textContent = q.bn || '';
     qTrans.classList.toggle('hidden', !q.bn);
@@ -1210,112 +1312,175 @@ function applySecondaryTranslationToRenderedQuestion(q, status){
   }
 }
 
-
 function applyHomeLanguage(lang){
-  const en = lang === 'en';
+  const isBn = lang === 'bn';
+  const isEn = lang === 'en';
+  const isDe = lang === 'de';
 
-  const setText = (id, bn, english) => {
+  const choose = (bn, en, de) => isDe ? de : (isEn ? en : bn);
+
+  const setText = (id, bn, en, de) => {
     const el = document.getElementById(id);
     if(!el) return;
-    el.textContent = en ? english : bn;
-    el.classList.toggle('bn', !en);
+    el.textContent = choose(bn, en, de);
+    el.classList.toggle('bn', isBn);
   };
 
-  const setHTML = (id, bn, english) => {
+  const setHTML = (id, bn, en, de) => {
     const el = document.getElementById(id);
     if(!el) return;
-    el.innerHTML = en ? english : bn;
-    el.classList.toggle('bn', !en);
+    el.innerHTML = choose(bn, en, de);
+    el.classList.toggle('bn', isBn);
   };
 
-  setText('home-title', 'একটি মোড বেছে নিন', 'Choose a practice mode');
+  setText('home-title',
+    'একটি মোড বেছে নিন',
+    'Choose a practice mode',
+    'Übungsmodus auswählen');
 
-  setText('home-mock-title', 'নকল পরীক্ষা (মূল পরীক্ষার মতো)', 'Mock exam (real exam style)');
+  setText('home-mock-title',
+    'নকল পরীক্ষা (মূল পরীক্ষার মতো)',
+    'Mock exam (real exam style)',
+    'Probeprüfung (wie die echte Prüfung)');
   setHTML('home-mock-desc',
     'এলোমেলোভাবে বাছাই করা <b>৩৩টি</b> প্রশ্ন, প্রকৃত পরীক্ষার ফরম্যাটে',
-    '<b>33</b> randomly selected questions in the real exam format');
+    '<b>33</b> randomly selected questions in the real exam format',
+    '<b>33</b> zufällig ausgewählte Fragen im Format der echten Prüfung');
 
-  setText('home-all-title', 'সব প্রশ্ন অনুশীলন', 'Practice all questions');
-  // This element is also updated by refreshAllModeUI(); that function keeps the progress numbers.
+  setText('home-all-title',
+    'সব প্রশ্ন অনুশীলন',
+    'Practice all questions',
+    'Alle Fragen üben');
+
   const allDesc = document.getElementById('all-mode-desc');
   if(allDesc && !allDesc.dataset.progressCustom){
-    allDesc.innerHTML = en
-      ? 'Practice all <b>300</b> general questions and continue later from where you stopped'
-      : 'সবগুলো <b>৩০০টি</b> প্রশ্ন এলোমেলোভাবে — যেখানে ছেড়ে যাবেন, সেখান থেকেই পরে আবার শুরু করা যাবে';
-    allDesc.classList.toggle('bn', !en);
+    allDesc.innerHTML = choose(
+      'সবগুলো <b>৩০০টি</b> প্রশ্ন এলোমেলোভাবে — যেখানে ছেড়ে যাবেন, সেখান থেকেই পরে আবার শুরু করা যাবে',
+      'Practice all <b>300</b> general questions and continue later from where you stopped',
+      'Alle <b>300</b> allgemeinen Fragen üben und später dort weitermachen, wo Sie aufgehört haben'
+    );
+    allDesc.classList.toggle('bn', isBn);
   }
 
-  setText('home-parts-title', '১০ দিনে সম্পূর্ণ করুন', 'Complete in 10 days');
+  setText('home-parts-title',
+    '১০ দিনে সম্পূর্ণ করুন',
+    'Complete in 10 days',
+    'In 10 Tagen abschließen');
   setText('home-parts-desc',
     '৩০০টি প্রশ্নকে ১০টি ভাগে ভাগ করা — প্রতিদিন একটি ভাগ শেষ করুন',
-    'The 300 questions are divided into 10 parts — complete one part per day');
+    'The 300 questions are divided into 10 parts — complete one part per day',
+    'Die 300 Fragen sind in 10 Teile aufgeteilt — jeden Tag einen Teil bearbeiten');
 
-  setText('home-state-title', 'State Questions (Bundesland)', 'State Questions (Bundesland)');
+  setText('home-state-title',
+    'State Questions (Bundesland)',
+    'State Questions (Bundesland)',
+    'Bundesland-Fragen');
   setHTML('home-state-desc',
     'Berlin, Bremen, Bayernসহ <b>১৬টি রাজ্য</b> থেকে একটি বেছে ১০টি অফিসিয়াল প্রশ্ন অনুশীলন করুন',
-    'Choose one of the <b>16 German states</b> (for example Berlin, Bremen or Bayern) and practice its 10 official questions');
+    'Choose one of the <b>16 German states</b> (for example Berlin, Bremen or Bayern) and practice its 10 official questions',
+    'Wählen Sie eines der <b>16 Bundesländer</b> (z. B. Berlin, Bremen oder Bayern) und üben Sie die 10 offiziellen Fragen');
 
-  setText('home-random-title', 'দ্রুত অনুশীলন', 'Quick practice');
+  setText('home-random-title',
+    'দ্রুত অনুশীলন',
+    'Quick practice',
+    'Schnellübung');
   setHTML('home-random-desc',
     'এলোমেলোভাবে বাছাই করা <b>৫০টি</b> প্রশ্ন',
-    '<b>50</b> randomly selected questions');
+    '<b>50</b> randomly selected questions',
+    '<b>50</b> zufällig ausgewählte Fragen');
 
-  setText('home-missed-title', 'ভুল প্রশ্নগুলো আবার দিন', 'Practice missed questions again');
+  setText('home-missed-title',
+    'ভুল প্রশ্নগুলো আবার দিন',
+    'Practice missed questions again',
+    'Falsch beantwortete Fragen wiederholen');
 
   const missedLabel = document.getElementById('missed-count-label');
   if(missedLabel){
     const n = (statsCache && statsCache.missedNums) ? statsCache.missedNums.length : 0;
-    missedLabel.textContent = en
-      ? (n ? `${n} question${n===1?'':'s'} currently missed` : 'Questions you answered incorrectly before')
-      : (n ? `আগে ভুল হয়েছে: ${n}টি প্রশ্ন` : 'যেসব প্রশ্নে আগে ভুল হয়েছিল');
-    missedLabel.classList.toggle('bn', !en);
+    missedLabel.textContent = isDe
+      ? (n ? `${n} aktuell falsch beantwortete Frage${n===1?'':'n'}` : 'Fragen, die Sie zuvor falsch beantwortet haben')
+      : isEn
+        ? (n ? `${n} question${n===1?'':'s'} currently missed` : 'Questions you answered incorrectly before')
+        : (n ? `আগে ভুল হয়েছে: ${n}টি প্রশ্ন` : 'যেসব প্রশ্নে আগে ভুল হয়েছিল');
+    missedLabel.classList.toggle('bn', isBn);
   }
 
-  setText('stat-attempts-label', 'মোট চেষ্টা', 'Total attempts');
-  setText('stat-best-label', 'সর্বোচ্চ স্কোর', 'Best score');
-  setText('stat-missed-label', 'এখনো ভুল', 'Still missed');
+  setText('stat-attempts-label', 'মোট চেষ্টা', 'Total attempts', 'Versuche insgesamt');
+  setText('stat-best-label', 'সর্বোচ্চ স্কোর', 'Best score', 'Bestes Ergebnis');
+  setText('stat-missed-label', 'এখনো ভুল', 'Still missed', 'Noch falsch');
 
   const reset = document.getElementById('all-mode-reset');
   if(reset){
-    reset.textContent = en
-      ? 'Start over (delete previous progress)'
-      : 'নতুন করে শুরু করুন (আগের অগ্রগতি মুছে ফেলুন)';
-    reset.classList.toggle('bn', !en);
+    reset.textContent = choose(
+      'নতুন করে শুরু করুন (আগের অগ্রগতি মুছে ফেলুন)',
+      'Start over (delete previous progress)',
+      'Neu starten (bisherigen Fortschritt löschen)'
+    );
+    reset.classList.toggle('bn', isBn);
   }
 
   setHTML('home-footer-note',
     'ℹ️ এই অ্যাপে সরকারি Gesamtfragenkatalog (Stand 07.05.2025) থেকে <b>৩০০টি সাধারণ প্রশ্ন</b> আছে—ছবিভিত্তিক প্রশ্নসহ। এছাড়া আলাদা <b>State Questions</b> সেকশনে ১৬টি Bundesland-এর প্রতিটির ১০টি করে অফিসিয়াল প্রশ্ন বেছে অনুশীলন করা যায়।',
-    'ℹ️ This app contains <b>300 general questions</b> from the official Gesamtfragenkatalog (Stand 07.05.2025), including image-based questions. The separate <b>State Questions</b> section lets you choose any of the 16 Bundesländer and practice its 10 official questions.');
+    'ℹ️ This app contains <b>300 general questions</b> from the official Gesamtfragenkatalog (Stand 07.05.2025), including image-based questions. The separate <b>State Questions</b> section lets you choose any of the 16 Bundesländer and practice its 10 official questions.',
+    'ℹ️ Diese App enthält <b>300 allgemeine Fragen</b> aus dem offiziellen Gesamtfragenkatalog (Stand 07.05.2025), einschließlich bildbasierter Fragen. Im Bereich <b>Bundesland-Fragen</b> können Sie eines der 16 Bundesländer auswählen und dessen 10 offizielle Fragen üben.');
 
-  setText('home-lang-hint', 'হোম থেকেই ভাষা বেছে নিন', 'Choose the translation language here');
+  setText('home-lang-hint',
+    'হোম থেকেই ভাষা বেছে নিন',
+    'Choose the language here',
+    'Sprache hier auswählen');
 
   const label = document.querySelector('.lang-label');
-  if(label) label.textContent = en ? 'Translation' : 'অনুবাদ';
+  if(label) label.textContent = isBn ? 'ভাষা' : (isDe ? 'Sprache' : 'Language');
+
+  const meta = document.getElementById('header-meta');
+  if(meta){
+    meta.innerHTML = choose(
+      '৩০০ সাধারণ + ১৬০ রাজ্য<br>Stand 07.05.2025',
+      '300 General + 160 State<br>Stand 07.05.2025',
+      '300 Allgemein + 160 Länder<br>Stand 07.05.2025'
+    );
+  }
 }
 
 function setTranslationLanguage(lang){
-  if(lang!=='bn' && lang!=='en') return;
+  if(lang!=='bn' && lang!=='en' && lang!=='de') return;
   translationLanguage = lang;
   try { localStorage.setItem(STORAGE_KEY_LANGUAGE, lang); } catch(e) {}
+
   applyHomeLanguage(lang);
+
   const bnBtn = document.getElementById('lang-bn-btn');
   const enBtn = document.getElementById('lang-en-btn');
-  if(bnBtn){ bnBtn.classList.toggle('active',lang==='bn'); bnBtn.setAttribute('aria-pressed',lang==='bn'?'true':'false'); }
-  if(enBtn){ enBtn.classList.toggle('active',lang==='en'); enBtn.setAttribute('aria-pressed',lang==='en'?'true':'false'); }
-  const sub = document.getElementById('masthead-subtitle');
-  if(sub) sub.textContent = lang==='bn'
-    ? 'জার্মানি নাগরিকত্ব পরীক্ষার অনুশীলন · জার্মান–বাংলা'
-    : 'German citizenship test practice · German–English';
+  const deBtn = document.getElementById('lang-de-btn');
 
+  if(bnBtn){
+    bnBtn.classList.toggle('active',lang==='bn');
+    bnBtn.setAttribute('aria-pressed',lang==='bn'?'true':'false');
+  }
+  if(enBtn){
+    enBtn.classList.toggle('active',lang==='en');
+    enBtn.setAttribute('aria-pressed',lang==='en'?'true':'false');
+  }
+  if(deBtn){
+    deBtn.classList.toggle('active',lang==='de');
+    deBtn.setAttribute('aria-pressed',lang==='de'?'true':'false');
+  }
+
+  const sub = document.getElementById('masthead-subtitle');
+  if(sub){
+    sub.textContent = lang==='bn'
+      ? 'জার্মানি নাগরিকত্ব পরীক্ষার অনুশীলন · জার্মান–বাংলা'
+      : lang==='en'
+        ? 'German citizenship test practice · German–English'
+        : 'Übung für den Test „Leben in Deutschland“ · Deutsch';
+    sub.classList.toggle('bn',lang==='bn');
+  }
+
+  // Re-render the current question so Deutsch can cleanly remove
+  // the secondary translation lines and BN/EN can restore them.
   const quiz = document.getElementById('screen-quiz');
   if(quiz && !quiz.classList.contains('hidden') && state.questions && state.questions[state.index]){
-    const q = state.questions[state.index];
-    applySecondaryTranslationToRenderedQuestion(q);
-    if(lang==='en' && !q.en){
-      ensureEnglishTranslation(q)
-        .then(()=>{ if(translationLanguage==='en') applySecondaryTranslationToRenderedQuestion(q); })
-        .catch(err=>{ console.warn(err); if(translationLanguage==='en') applySecondaryTranslationToRenderedQuestion(q,'error'); });
-    }
+    renderQuestion();
   }
 }
 
@@ -1762,8 +1927,13 @@ function renderQuestion(){
   document.getElementById('q-num-badge').textContent = (q.section ? (q.section + ' · ') : '') + 'Aufgabe ' + q.num;
   document.getElementById('q-de-text').textContent = q.de;
   const qBn = document.getElementById('q-bn-text');
-  qBn.textContent = translationLanguage==='en' ? (q.en || 'Loading English translation…') : (q.bn || '');
-  qBn.classList.toggle('hidden', translationLanguage==='bn' && !q.bn);
+  qBn.textContent = translationLanguage==='en'
+    ? (q.en || 'Preparing English translation…')
+    : translationLanguage==='bn'
+      ? (q.bn || '')
+      : '';
+  qBn.classList.toggle('hidden',
+    translationLanguage==='de' || (translationLanguage==='bn' && !q.bn));
   qBn.classList.toggle('lang-en', translationLanguage==='en');
   qBn.classList.toggle('bn', translationLanguage==='bn');
   qBn.classList.toggle('translation-loading', translationLanguage==='en' && !q.en);
@@ -1783,12 +1953,13 @@ function renderQuestion(){
     btn.className='opt';
     let secondary = '';
     if(translationLanguage==='en'){
-      const text = (q.options_en && q.options_en[i]) ? q.options_en[i] : 'Loading English…';
+      const text = (q.options_en && q.options_en[i]) ? q.options_en[i] : 'Preparing English…';
       const loadingClass = (q.options_en && q.options_en[i]) ? '' : ' translation-loading';
       secondary = `<div class="o-bn lang-en${loadingClass}">${text}</div>`;
-    } else if(q.options_bn && q.options_bn[i]){
+    } else if(translationLanguage==='bn' && q.options_bn && q.options_bn[i]){
       secondary = `<div class="o-bn">${q.options_bn[i]}</div>`;
     }
+    // Deutsch mode intentionally adds no secondary line.
     btn.innerHTML = `<div class="o-de">${q.options_de[i]}</div>${secondary}`;
     btn.onclick = ()=>selectAnswer(i, btn);
     optsWrap.appendChild(btn);
