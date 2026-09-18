@@ -938,6 +938,105 @@ button:focus-visible,.state-select:focus-visible{
   #screen-state-select .topbar > div{font-size:15px !important;}
 }
 
+/* =========================================================
+   QUESTION INDEX — added for serial review (1–300)
+   Existing UI/quiz styles above remain unchanged.
+   ========================================================= */
+.question-index-toolbar{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin:16px 0 12px;
+}
+.question-index-search{
+  width:100%;
+  min-height:46px;
+  padding:10px 14px;
+  border:1.5px solid #d6deea;
+  border-radius:13px;
+  background:#f8fafc;
+  color:var(--text);
+  font:inherit;
+  outline:none;
+}
+.question-index-search:focus{
+  border-color:#5a7aa1;
+  box-shadow:0 0 0 4px rgba(24,59,103,.09);
+  background:#fff;
+}
+.question-index-count{
+  flex:0 0 auto;
+  font-size:12px;
+  color:var(--muted);
+  white-space:nowrap;
+}
+.question-index-list{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+.question-index-item{
+  width:100%;
+  display:flex;
+  align-items:flex-start;
+  gap:11px;
+  text-align:left;
+  padding:12px 13px;
+  border:1px solid #dde4ee;
+  border-radius:13px;
+  background:#fbfcfd;
+  cursor:pointer;
+  font:inherit;
+  transition:transform .14s ease,border-color .14s ease,background .14s ease,box-shadow .14s ease;
+}
+.question-index-item:hover{
+  transform:translateY(-1px);
+  border-color:#9fb1c8;
+  background:#fff;
+  box-shadow:0 12px 24px -22px rgba(13,31,60,.55);
+}
+.qidx-num{
+  flex:0 0 auto;
+  min-width:42px;
+  padding:5px 7px;
+  border-radius:9px;
+  background:#eef3f8;
+  color:#21476f;
+  font-size:12px;
+  font-weight:800;
+  text-align:center;
+}
+.qidx-body{min-width:0;flex:1;}
+.qidx-de{
+  color:#17243a;
+  font-size:13.5px;
+  font-weight:600;
+  line-height:1.45;
+}
+.qidx-sub{
+  margin-top:4px;
+  color:#748096;
+  font-size:11.8px;
+  line-height:1.5;
+}
+.question-index-empty{
+  grid-column:1/-1;
+  padding:22px 10px;
+  text-align:center;
+  color:var(--muted);
+}
+@media (max-width:720px){
+  .question-index-list{grid-template-columns:1fr;}
+}
+@media (max-width:480px){
+  .question-index-toolbar{flex-direction:column;align-items:stretch;}
+  .question-index-count{text-align:right;}
+  .question-index-item{padding:11px;}
+  .qidx-de{font-size:13px;}
+  .qidx-sub{font-size:11.4px;}
+}
+
 </style>
 </head>
 <body>
@@ -977,7 +1076,7 @@ button:focus-visible,.state-select:focus-visible{
         <div class="ic">📝</div>
         <div>
           <div class="tt" id="home-mock-title">নকল পরীক্ষা (মূল পরীক্ষার মতো)</div>
-          <div class="dd bn" id="home-mock-desc">এলোমেলোভাবে বাছাই করা <b>৩৩টি</b> প্রশ্ন, প্রকৃত পরীক্ষার ফরম্যাটে</div>
+          <div class="dd bn" id="home-mock-desc"><b>৩০টি সাধারণ + ৩টি Bundesland</b> প্রশ্ন = মোট <b>৩৩টি</b>, প্রকৃত পরীক্ষার ফরম্যাটে</div>
         </div>
       </button>
       <div>
@@ -990,6 +1089,14 @@ button:focus-visible,.state-select:focus-visible{
         </button>
         <div class="bn hidden" id="all-mode-reset" onclick="resetAllProgress()" style="text-align:right; font-size:12.5px; color:var(--muted); text-decoration:underline; cursor:pointer; padding:4px 4px 0;">নতুন করে শুরু করুন (আগের অগ্রগতি মুছে ফেলুন)</div>
       </div>
+
+      <button class="mode-btn" onclick="openQuestionIndex()">
+        <div class="ic">🔢</div>
+        <div>
+          <div class="tt" id="home-index-title">প্রশ্ন সূচি (১–৩০০)</div>
+          <div class="dd bn" id="home-index-desc">সব প্রশ্ন সিরিয়াল অনুযায়ী দেখুন — যেকোনো প্রশ্নে ক্লিক করলে সরাসরি সেই প্রশ্নে যাবে</div>
+        </div>
+      </button>
       <button class="mode-btn" onclick="goToPartsList()">
         <div class="ic">🗓️</div>
         <div>
@@ -1030,16 +1137,35 @@ button:focus-visible,.state-select:focus-visible{
     </div>
   </div>
 
+
+  <!-- QUESTION INDEX SCREEN -->
+  <div id="screen-question-index" class="card hidden">
+    <div class="topbar" style="margin-bottom:10px;">
+      <button class="icon-btn" onclick="closeQuestionIndex()" title="হোমে ফিরুন">←</button>
+      <div id="question-index-title" style="font-weight:700; font-size:16px; color:var(--text); align-self:center;">প্রশ্ন সূচি · ১–৩০০</div>
+    </div>
+    <div id="question-index-note" class="bn" style="font-size:13px; color:var(--muted); line-height:1.65;">
+      প্রশ্নগুলো সিরিয়াল অনুযায়ী সাজানো। যেকোনো প্রশ্নে ক্লিক করলে সরাসরি সেই প্রশ্ন খুলবে।
+    </div>
+    <div class="question-index-toolbar">
+      <input id="question-index-search" class="question-index-search" type="search"
+             placeholder="প্রশ্ন নম্বর বা শব্দ লিখে খুঁজুন"
+             oninput="renderQuestionIndex(this.value)">
+      <div id="question-index-count" class="question-index-count">৩০০টি প্রশ্ন</div>
+    </div>
+    <div id="question-index-list" class="question-index-list"></div>
+  </div>
+
   <!-- STATE SELECT SCREEN -->
   <div id="screen-state-select" class="card hidden">
     <div class="topbar" style="margin-bottom:14px;">
       <button class="icon-btn" onclick="goHome()" title="হোমে ফিরুন">←</button>
-      <div style="font-weight:600; font-size:15px; color:var(--text); align-self:center;">State Questions · Bundesland</div>
+      <div id="state-screen-title" style="font-weight:600; font-size:15px; color:var(--text); align-self:center;">State Questions · Bundesland</div>
     </div>
-    <div class="bn" style="font-size:13.5px; color:var(--muted); line-height:1.7; margin-bottom:12px;">
+    <div id="state-screen-intro" class="bn" style="font-size:13.5px; color:var(--muted); line-height:1.7; margin-bottom:12px;">
       আপনার Bundesland বেছে নিন। প্রতিটি রাজ্যের ১০টি official question দেখানো হবে। PDF-এর image-based প্রশ্নগুলো clean extracted image হিসেবে দেখাবে।
     </div>
-    <label for="state-select" class="bn" style="display:block; font-size:13px; font-weight:600; color:var(--ink); margin-bottom:7px;">Bundesland নির্বাচন করুন</label>
+    <label id="state-screen-label" for="state-select" class="bn" style="display:block; font-size:13px; font-weight:600; color:var(--ink); margin-bottom:7px;">Bundesland নির্বাচন করুন</label>
     <select id="state-select" class="state-select"></select>
     <button id="state-start-btn" class="next-btn" style="width:100%; margin-top:14px;" onclick="startSelectedState()">১০টি প্রশ্ন শুরু করুন →</button>
     <div id="state-load-note" class="bn" style="font-size:12px; color:var(--muted); margin-top:10px; line-height:1.6;">State question ও image BAMF PDF-derived dataset থেকে load হবে; বাংলা/English language switch-এর English translation এই HTML-এর ভেতরেই local।</div>
@@ -1344,8 +1470,8 @@ function applyHomeLanguage(lang){
     'Probeprüfung (wie die echte Prüfung)');
   setHTML('home-mock-desc',
     'এলোমেলোভাবে বাছাই করা <b>৩৩টি</b> প্রশ্ন, প্রকৃত পরীক্ষার ফরম্যাটে',
-    '<b>33</b> randomly selected questions in the real exam format',
-    '<b>33</b> zufällig ausgewählte Fragen im Format der echten Prüfung');
+    '<b>30 general + 3 Bundesland</b> questions = <b>33</b> total, matching the real exam structure',
+    '<b>30 allgemeine + 3 Bundesland</b>-Fragen = insgesamt <b>33</b>, entsprechend der echten Prüfungsstruktur');
 
   setText('home-all-title',
     'সব প্রশ্ন অনুশীলন',
@@ -1361,6 +1487,16 @@ function applyHomeLanguage(lang){
     );
     allDesc.classList.toggle('bn', isBn);
   }
+
+
+  setText('home-index-title',
+    'প্রশ্ন সূচি (১–৩০০)',
+    'Question index (1–300)',
+    'Fragenindex (1–300)');
+  setHTML('home-index-desc',
+    'সব প্রশ্ন সিরিয়াল অনুযায়ী দেখুন — যেকোনো প্রশ্নে ক্লিক করলে সরাসরি সেই প্রশ্নে যাবে',
+    'View all questions in serial order — click any question to open it directly',
+    'Alle Fragen in Reihenfolge anzeigen — eine Frage anklicken, um sie direkt zu öffnen');
 
   setText('home-parts-title',
     '১০ দিনে সম্পূর্ণ করুন',
@@ -1482,6 +1618,16 @@ function setTranslationLanguage(lang){
   if(quiz && !quiz.classList.contains('hidden') && state.questions && state.questions[state.index]){
     renderQuestion();
   }
+
+  const indexScreen = document.getElementById('screen-question-index');
+  if(indexScreen && !indexScreen.classList.contains('hidden')){
+    renderQuestionIndex();
+  }
+
+  const stateScreen = document.getElementById('screen-state-select');
+  if(stateScreen && !stateScreen.classList.contains('hidden') && typeof applyStateSelectorCopy==='function'){
+    applyStateSelectorCopy();
+  }
 }
 
 const STORAGE_KEY_STATS = 'lid_stats_v1';
@@ -1500,6 +1646,7 @@ const STATE_NAMES = {
   SL:'Saarland', SN:'Sachsen', ST:'Sachsen-Anhalt', SH:'Schleswig-Holstein', TH:'Thüringen'
 };
 let stateDatasetCache = null;
+let stateSelectorPurpose = 'state';
 
 function populateStateSelect(){
   const sel = document.getElementById('state-select');
@@ -1513,13 +1660,69 @@ function populateStateSelect(){
   });
 }
 
-function openStateSelector(){
+function applyStateSelectorCopy(){
+  const lang = translationLanguage;
+  const isBn = lang==='bn';
+  const choose = (bn,en,de)=> lang==='de' ? de : (lang==='en' ? en : bn);
+  const isMock = stateSelectorPurpose==='mock';
+
+  const title = document.getElementById('state-screen-title');
+  const intro = document.getElementById('state-screen-intro');
+  const label = document.getElementById('state-screen-label');
+  const btn = document.getElementById('state-start-btn');
+  const note = document.getElementById('state-load-note');
+
+  if(title) title.textContent = isMock
+    ? choose('নকল পরীক্ষা · Bundesland বেছে নিন','Mock exam · Choose Bundesland','Probeprüfung · Bundesland wählen')
+    : 'State Questions · Bundesland';
+
+  if(intro){
+    intro.textContent = isMock
+      ? choose(
+          'আপনার Bundesland বেছে নিন। নকল পরীক্ষায় ৩০টি সাধারণ প্রশ্নের সাথে এই রাজ্য থেকে এলোমেলো ৩টি প্রশ্ন থাকবে।',
+          'Choose your Bundesland. The mock exam will contain 30 general questions plus 3 randomly selected questions from this state.',
+          'Wählen Sie Ihr Bundesland. Die Probeprüfung enthält 30 allgemeine Fragen plus 3 zufällig ausgewählte Fragen aus diesem Bundesland.'
+        )
+      : choose(
+          'আপনার Bundesland বেছে নিন। প্রতিটি রাজ্যের ১০টি official question দেখানো হবে।',
+          'Choose your Bundesland to practise its 10 official state questions.',
+          'Wählen Sie Ihr Bundesland, um die 10 landesbezogenen Fragen zu üben.'
+        );
+    intro.classList.toggle('bn',isBn);
+  }
+
+  if(label){
+    label.textContent = choose('Bundesland নির্বাচন করুন','Choose Bundesland','Bundesland wählen');
+    label.classList.toggle('bn',isBn);
+  }
+
+  if(btn) btn.textContent = isMock
+    ? choose('৩৩ প্রশ্নের নকল পরীক্ষা শুরু করুন →','Start 33-question mock exam →','Probeprüfung mit 33 Fragen starten →')
+    : choose('১০টি প্রশ্ন শুরু করুন →','Start 10 questions →','10 Fragen starten →');
+
+  if(note) note.textContent = isMock
+    ? choose(
+        'প্রকৃত পরীক্ষার কাঠামো: ৩০টি সাধারণ + ৩টি Bundesland প্রশ্ন।',
+        'Real exam structure: 30 general + 3 Bundesland questions.',
+        'Echte Prüfungsstruktur: 30 allgemeine + 3 Bundesland-Fragen.'
+      )
+    : choose(
+        'State question ও image BAMF PDF-derived dataset থেকে load হবে; English translation এই HTML-এর ভেতরেই local।',
+        'State questions and images load from the BAMF-PDF-derived dataset; English translation is handled locally in this HTML.',
+        'Landesfragen und Bilder werden aus dem BAMF-PDF-abgeleiteten Datensatz geladen; die englische Übersetzung ist lokal in dieser HTML-Datei.'
+      );
+}
+
+function openStateSelector(purpose='state'){
+  stateSelectorPurpose = purpose==='mock' ? 'mock' : 'state';
   populateStateSelect();
   document.getElementById('screen-home').classList.add('hidden');
   document.getElementById('screen-quiz').classList.add('hidden');
   document.getElementById('screen-results').classList.add('hidden');
   document.getElementById('screen-parts').classList.add('hidden');
+  const qi = document.getElementById('screen-question-index'); if(qi) qi.classList.add('hidden');
   document.getElementById('screen-state-select').classList.remove('hidden');
+  applyStateSelectorCopy();
 }
 
 async function loadStateDataset(){
@@ -1530,6 +1733,23 @@ async function loadStateDataset(){
   if(!data || !Array.isArray(data.questions)) throw new Error('Invalid state question dataset.');
   stateDatasetCache = data.questions;
   return stateDatasetCache;
+}
+
+function getMappedStateQuestions(dataset, code, name){
+  const raw = dataset.filter(q=>q.scope==='state' && q.stateCode===code);
+  if(raw.length!==10) throw new Error(name+'-এর ১০টি প্রশ্ন পাওয়া যায়নি।');
+
+  const qs = raw.map(q=>mapStateQuestion(q,name));
+  const invalid = qs.find(q=>
+    !q ||
+    !Number.isInteger(q.answer) ||
+    q.answer<0 || q.answer>3 ||
+    !Array.isArray(q.options_de) ||
+    q.options_de.length!==4 ||
+    !q.de
+  );
+  if(invalid) throw new Error(name+'-এর state question dataset invalid।');
+  return qs;
 }
 
 function mapStateQuestion(q, stateName){
@@ -1554,22 +1774,68 @@ async function startSelectedState(){
   const note = document.getElementById('state-load-note');
   const code = sel ? sel.value : 'HB';
   const name = STATE_NAMES[code] || code;
+  const purpose = stateSelectorPurpose;
   const oldText = btn ? btn.textContent : '';
+
   try{
-    if(btn){ btn.disabled=true; btn.textContent='লোড হচ্ছে…'; }
-    if(note) note.textContent = name + ' এর official প্রশ্ন লোড হচ্ছে…';
+    if(btn){
+      btn.disabled=true;
+      btn.textContent = translationLanguage==='de' ? 'Wird geladen…' : (translationLanguage==='en' ? 'Loading…' : 'লোড হচ্ছে…');
+    }
+    if(note){
+      note.textContent = translationLanguage==='de'
+        ? (name + ': Fragen werden geladen…')
+        : translationLanguage==='en'
+          ? ('Loading official questions for ' + name + '…')
+          : (name + ' এর official প্রশ্ন লোড হচ্ছে…');
+    }
+
     const dataset = await loadStateDataset();
-    const qs = dataset.filter(q=>q.scope==='state' && q.stateCode===code).map(q=>mapStateQuestion(q,name));
-    if(qs.length!==10) throw new Error(name+'-এর ১০টি প্রশ্ন পাওয়া যায়নি।');
-    state = { mode:'state', partIndex:null, stateCode:code, questions:qs, index:0, answers:new Array(qs.length).fill(null), answered:false };
-    showQuizScreen(qs.length);
-    renderQuestion();
+    const stateQs = getMappedStateQuestions(dataset, code, name);
+
+    if(purpose==='mock'){
+      const generalQs = shuffle(ALL_QUESTIONS).slice(0,30);
+      const selectedStateQs = shuffle(stateQs).slice(0,3);
+      const qs = generalQs.concat(selectedStateQs); // 30 general + 3 state
+      state = {
+        mode:'mock',
+        partIndex:null,
+        stateCode:code,
+        questions:qs,
+        index:0,
+        answers:new Array(qs.length).fill(null),
+        answered:false
+      };
+      showQuizScreen(qs.length);
+      renderQuestion();
+    }else{
+      state = {
+        mode:'state',
+        partIndex:null,
+        stateCode:code,
+        questions:stateQs,
+        index:0,
+        answers:new Array(stateQs.length).fill(null),
+        answered:false
+      };
+      showQuizScreen(stateQs.length);
+      renderQuestion();
+    }
   }catch(err){
     console.error(err);
-    if(note) note.textContent = 'State questions লোড করা যায়নি। Internet connection check করে আবার চেষ্টা করুন।';
-    alert('State questions লোড করা যায়নি। Internet connection check করে আবার চেষ্টা করুন।');
+    const msg = translationLanguage==='de'
+      ? 'Die Bundesland-Fragen konnten nicht geladen werden. Bitte Internetverbindung prüfen und erneut versuchen.'
+      : translationLanguage==='en'
+        ? 'State questions could not be loaded. Check the internet connection and try again.'
+        : 'State questions লোড করা যায়নি। Internet connection check করে আবার চেষ্টা করুন।';
+    if(note) note.textContent = msg;
+    alert(msg);
   }finally{
-    if(btn){ btn.disabled=false; btn.textContent=oldText || '১০টি প্রশ্ন শুরু করুন →'; }
+    if(btn){
+      btn.disabled=false;
+      btn.textContent=oldText;
+      applyStateSelectorCopy();
+    }
   }
 }
 
@@ -1698,7 +1964,7 @@ function renderHomeStats(){
 }
 
 function pickQuestions(mode){
-  if(mode==='mock') return shuffle(ALL_QUESTIONS).slice(0,33);
+  if(mode==='mock') return shuffle(ALL_QUESTIONS).slice(0,30); // mock itself is built as 30 general + 3 state in startSelectedState()
   if(mode==='all') return shuffle(ALL_QUESTIONS);
   if(mode==='random50') return shuffle(ALL_QUESTIONS).slice(0,50);
   if(mode==='missed'){
@@ -1708,6 +1974,162 @@ function pickQuestions(mode){
   }
   return shuffle(ALL_QUESTIONS).slice(0,33);
 }
+
+
+// ---- Serial Question Index (1–300) ----
+// Additive review/navigation feature. It does not change the question dataset.
+function openQuestionIndex(){
+  document.getElementById('screen-home').classList.add('hidden');
+  document.getElementById('screen-quiz').classList.add('hidden');
+  document.getElementById('screen-results').classList.add('hidden');
+  document.getElementById('screen-parts').classList.add('hidden');
+  const ss = document.getElementById('screen-state-select');
+  if(ss) ss.classList.add('hidden');
+
+  const screen = document.getElementById('screen-question-index');
+  if(screen) screen.classList.remove('hidden');
+
+  renderQuestionIndex();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function closeQuestionIndex(){
+  const screen = document.getElementById('screen-question-index');
+  if(screen) screen.classList.add('hidden');
+  goHome();
+}
+
+function renderQuestionIndex(filterValue){
+  const list = document.getElementById('question-index-list');
+  const search = document.getElementById('question-index-search');
+  const count = document.getElementById('question-index-count');
+  const title = document.getElementById('question-index-title');
+  const note = document.getElementById('question-index-note');
+  if(!list) return;
+
+  const lang = translationLanguage;
+  const isBn = lang==='bn';
+  const isEn = lang==='en';
+  const choose = (bn,en,de)=> isBn ? bn : (isEn ? en : de);
+
+  if(title) title.textContent = choose('প্রশ্ন সূচি · ১–৩০০','Question index · 1–300','Fragenindex · 1–300');
+  if(note){
+    note.textContent = choose(
+      'প্রশ্নগুলো সিরিয়াল অনুযায়ী সাজানো। যেকোনো প্রশ্নে ক্লিক করলে সরাসরি সেই প্রশ্ন খুলবে।',
+      'Questions are listed in serial order. Click any question to open it directly.',
+      'Die Fragen sind der Reihe nach aufgelistet. Klicken Sie auf eine Frage, um sie direkt zu öffnen.'
+    );
+    note.classList.toggle('bn',isBn);
+  }
+  if(search){
+    search.placeholder = choose(
+      'প্রশ্ন নম্বর বা শব্দ লিখে খুঁজুন',
+      'Search by question number or keyword',
+      'Nach Fragennummer oder Stichwort suchen'
+    );
+  }
+
+  const raw = (filterValue !== undefined ? filterValue : (search ? search.value : '')) || '';
+  const term = raw.trim().toLowerCase();
+  const exactNumber = /^\d+$/.test(term) ? Number(term) : null;
+
+  list.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  let shown = 0;
+
+  ALL_QUESTIONS.forEach(q=>{
+    const localEn = LOCAL_EN_GENERAL[String(Number(q.num))];
+    const enQuestion = q.en || (localEn ? localEn[0] : '');
+    const enOptions = (q.options_en && q.options_en.length===4)
+      ? q.options_en
+      : (localEn ? localEn[1] : []);
+    const haystack = `${q.num} ${q.de} ${q.bn||''} ${enQuestion||''} ${(enOptions||[]).join(' ')}`.toLowerCase();
+    const matches = exactNumber !== null ? q.num===exactNumber : (!term || haystack.includes(term));
+    if(!matches) return;
+
+    shown++;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'question-index-item';
+    btn.onclick = ()=>openIndexedQuestion(q.num);
+
+    const num = document.createElement('div');
+    num.className = 'qidx-num';
+    num.textContent = '#' + q.num;
+
+    const body = document.createElement('div');
+    body.className = 'qidx-body';
+
+    const de = document.createElement('div');
+    de.className = 'qidx-de';
+    de.textContent = q.de;
+    body.appendChild(de);
+
+    let secondary = '';
+    if(isBn) secondary = q.bn || '';
+    else if(isEn) secondary = enQuestion || '';
+
+    if(secondary){
+      const sub = document.createElement('div');
+      sub.className = 'qidx-sub' + (isBn ? ' bn' : '');
+      sub.textContent = secondary;
+      body.appendChild(sub);
+    }
+
+    btn.appendChild(num);
+    btn.appendChild(body);
+    frag.appendChild(btn);
+  });
+
+  if(shown===0){
+    const empty = document.createElement('div');
+    empty.className = 'question-index-empty';
+    empty.textContent = choose('কোনো প্রশ্ন পাওয়া যায়নি।','No question found.','Keine Frage gefunden.');
+    frag.appendChild(empty);
+  }
+
+  list.appendChild(frag);
+  if(count){
+    count.textContent = isBn
+      ? `${shown}টি প্রশ্ন`
+      : isEn
+        ? `${shown} question${shown===1?'':'s'}`
+        : `${shown} Frage${shown===1?'':'n'}`;
+  }
+}
+
+function openIndexedQuestion(questionNum){
+  const targetIndex = ALL_QUESTIONS.findIndex(q=>q.num===questionNum);
+  if(targetIndex<0) return;
+
+  // Keep answers while moving between index entries during the same review session.
+  const isCurrentIndexSession =
+    state.mode==='index' &&
+    state.questions &&
+    state.questions.length===ALL_QUESTIONS.length &&
+    state.questions.every((q,i)=>q===ALL_QUESTIONS[i]);
+
+  if(!isCurrentIndexSession){
+    state = {
+      mode:'index',
+      partIndex:null,
+      questions:ALL_QUESTIONS.slice(),
+      index:targetIndex,
+      answers:new Array(ALL_QUESTIONS.length).fill(null),
+      answered:false
+    };
+  } else {
+    state.index = targetIndex;
+    state.answered = !!state.answers[targetIndex];
+  }
+
+  const screen = document.getElementById('screen-question-index');
+  if(screen) screen.classList.add('hidden');
+  showQuizScreen(ALL_QUESTIONS.length);
+  renderQuestion();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
 
 // ---- 10-part study plan helpers ----
 function getPartsRanges(){
@@ -1796,11 +2218,17 @@ function showQuizScreen(total){
   document.getElementById('screen-parts').classList.add('hidden');
   document.getElementById('screen-results').classList.add('hidden');
   const ss = document.getElementById('screen-state-select'); if(ss) ss.classList.add('hidden');
+  const qi = document.getElementById('screen-question-index'); if(qi) qi.classList.add('hidden');
   document.getElementById('screen-quiz').classList.remove('hidden');
   document.getElementById('q-total').textContent = total;
 }
 
 async function startQuiz(mode){
+  if(mode==='mock'){
+    openStateSelector('mock');
+    return;
+  }
+
   if(mode==='missed' && (!statsCache.missedNums || statsCache.missedNums.length===0)){
     alert('এখনো কোনো ভুল প্রশ্ন নেই। আগে একটি অনুশীলন শেষ করুন।');
     return;
@@ -2054,14 +2482,19 @@ async function finishQuiz(){
   document.getElementById('screen-quiz').classList.add('hidden');
   document.getElementById('screen-results').classList.remove('hidden');
 
-  // Any question left unanswered counts as not-yet-attempted (not wrong)
+  // Track exact question positions because mock exams can contain a general
+  // question #1..10 and a Bundesland question #1..10 in the same set.
   const wrongThisRound = [];
   const correctThisRound = [];
+  const unansweredThisRound = [];
   state.questions.forEach((q,i)=>{
     const a = state.answers[i];
-    if(a){
-      if(a.correct) correctThisRound.push(q.num);
-      else wrongThisRound.push({num:q.num, chosen:a.chosen});
+    if(!a){
+      unansweredThisRound.push({index:i, num:q.num, section:q.section||''});
+    }else if(a.correct){
+      correctThisRound.push({index:i, num:q.num, section:q.section||''});
+    }else{
+      wrongThisRound.push({index:i, num:q.num, section:q.section||'', chosen:a.chosen});
     }
   });
 
@@ -2082,14 +2515,16 @@ async function finishQuiz(){
 
   // Keep the existing general-question stats/config untouched.
   // State practice uses local 1-10 numbering, so it must not pollute general missed-question IDs.
-  if(state.mode!=='state'){
+  if(state.mode!=='state' && state.mode!=='index'){
     statsCache.attempts = (statsCache.attempts||0) + 1;
     if(state.mode==='mock'){
       statsCache.best = Math.max(statsCache.best||0, score);
     }
     const missedSet = new Set(statsCache.missedNums||[]);
-    wrongThisRound.forEach(w=>missedSet.add(w.num));
-    correctThisRound.forEach(n=>missedSet.delete(n));
+    // Only general questions belong in the general missed-question list.
+    // Bundesland questions use local numbers 1..10 and would otherwise collide.
+    wrongThisRound.filter(w=>!w.section).forEach(w=>missedSet.add(w.num));
+    correctThisRound.filter(c=>!c.section).forEach(c=>missedSet.delete(c.num));
     statsCache.missedNums = Array.from(missedSet);
     await saveStats();
   }
@@ -2114,6 +2549,22 @@ async function finishQuiz(){
     stateBtn.onclick = openStateSelector;
     extraEl.appendChild(stateBtn);
   }
+
+  if(state.mode==='mock'){
+    const mockBtn = document.createElement('button');
+    mockBtn.className = 'next-btn secondary';
+    mockBtn.textContent = 'নতুন নকল পরীক্ষা / Bundesland বদলান';
+    mockBtn.onclick = ()=>openStateSelector('mock');
+    extraEl.appendChild(mockBtn);
+  }
+
+  if(state.mode==='index'){
+    const indexBtn = document.createElement('button');
+    indexBtn.className = 'next-btn secondary';
+    indexBtn.textContent = 'প্রশ্ন সূচিতে ফিরুন';
+    indexBtn.onclick = openQuestionIndex;
+    extraEl.appendChild(indexBtn);
+  }
   if(state.mode==='part'){
     const backBtn = document.createElement('button');
     backBtn.className = 'next-btn secondary';
@@ -2130,9 +2581,10 @@ async function finishQuiz(){
     }
   }
 
-  // render missed review
+  // render review: wrong and unanswered are shown separately.
   const reviewWrap = document.getElementById('missed-review');
   reviewWrap.innerHTML = '';
+
   if(wrongThisRound.length>0){
     const header = document.createElement('div');
     header.style.fontWeight='600'; header.style.fontSize='14px'; header.style.marginBottom='6px';
@@ -2141,9 +2593,8 @@ async function finishQuiz(){
     reviewWrap.appendChild(header);
 
     wrongThisRound.forEach(w=>{
-      const q = state.mode==='state'
-        ? state.questions.find(x=>x.num===w.num)
-        : ALL_QUESTIONS.find(x=>x.num===w.num);
+      const q = state.questions[w.index];
+      if(!q) return;
       const item = document.createElement('div');
       item.className='missed-item';
       item.innerHTML = `
@@ -2152,11 +2603,38 @@ async function finishQuiz(){
           ${q.bn ? `<div class="mi-bn">${q.bn}</div>` : ''}
           <div class="mi-ans">✓ সঠিক: ${q.options_de[q.answer]}${q.options_bn && q.options_bn[q.answer] ? ' — ' + q.options_bn[q.answer] : ''}</div>
         </div>
-        <div class="mi-num">#${q.num}</div>
+        <div class="mi-num">${q.section ? q.section+' · ' : ''}#${q.num}</div>
       `;
       reviewWrap.appendChild(item);
     });
-  } else {
+  }
+
+  if(unansweredThisRound.length>0){
+    const header = document.createElement('div');
+    header.style.fontWeight='600'; header.style.fontSize='14px';
+    header.style.margin = wrongThisRound.length ? '16px 0 6px' : '0 0 6px';
+    header.className='bn';
+    header.textContent = 'উত্তর দেওয়া হয়নি (' + unansweredThisRound.length + 'টি):';
+    reviewWrap.appendChild(header);
+
+    unansweredThisRound.forEach(u=>{
+      const q = state.questions[u.index];
+      if(!q) return;
+      const item = document.createElement('div');
+      item.className='missed-item';
+      item.innerHTML = `
+        <div style="flex:1">
+          <div class="mi-de">${q.de}</div>
+          ${q.bn ? `<div class="mi-bn">${q.bn}</div>` : ''}
+          <div class="mi-ans">✓ সঠিক: ${q.options_de[q.answer]}${q.options_bn && q.options_bn[q.answer] ? ' — ' + q.options_bn[q.answer] : ''}</div>
+        </div>
+        <div class="mi-num">${q.section ? q.section+' · ' : ''}#${q.num}</div>
+      `;
+      reviewWrap.appendChild(item);
+    });
+  }
+
+  if(wrongThisRound.length===0 && unansweredThisRound.length===0){
     reviewWrap.innerHTML = '<div class="bn" style="text-align:center; color:var(--green); font-weight:600; padding:14px 0;">🎉 সব প্রশ্নের উত্তর সঠিক হয়েছে!</div>';
   }
 
@@ -2164,8 +2642,8 @@ async function finishQuiz(){
 }
 
 function retrySame(){
-  const qs = shuffle(state.questions);
-  state = { mode:state.mode, partIndex:state.partIndex, questions:qs, index:0, answers:new Array(qs.length).fill(null), answered:false };
+  const qs = state.mode==='index' ? state.questions.slice() : shuffle(state.questions);
+  state = { mode:state.mode, partIndex:state.partIndex, stateCode:state.stateCode||null, questions:qs, index:0, answers:new Array(qs.length).fill(null), answered:false };
   document.getElementById('screen-results').classList.add('hidden');
   document.getElementById('screen-quiz').classList.remove('hidden');
   document.getElementById('q-total').textContent = qs.length;
@@ -2178,6 +2656,7 @@ function goHome(){
   document.getElementById('screen-quiz').classList.add('hidden');
   document.getElementById('screen-parts').classList.add('hidden');
   const ss = document.getElementById('screen-state-select'); if(ss) ss.classList.add('hidden');
+  const qi = document.getElementById('screen-question-index'); if(qi) qi.classList.add('hidden');
   document.getElementById('screen-home').classList.remove('hidden');
   renderHomeStats();
   refreshAllModeUI();
@@ -2188,7 +2667,9 @@ function confirmExit(){
   // Progress is saved automatically as you go, so we don't need to block
   // the exit behind a confirm() dialog (which some embedded viewers
   // suppress, silently doing nothing).
-  if(state.mode==='part'){
+  if(state.mode==='index'){
+    openQuestionIndex();
+  } else if(state.mode==='part'){
     goToPartsList();
   } else {
     goHome();
